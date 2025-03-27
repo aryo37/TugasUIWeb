@@ -1,0 +1,64 @@
+plugins {
+    id 'java'
+    id 'idea'
+}
+
+group = 'org.aryo'
+version = '1.0-SNAPSHOT'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(23) // atau versi Java yang Anda gunakan
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    // Testing
+    testImplementation platform('org.junit:junit-bom:5.10.0')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testImplementation 'org.junit.vintage:junit-vintage-engine'
+    testImplementation 'org.assertj:assertj-core:3.25.3'
+
+    // Cucumber
+    testImplementation 'io.cucumber:cucumber-java:7.21.1'
+    testImplementation 'io.cucumber:cucumber-junit:7.21.1'
+
+    // Selenium
+    implementation 'org.seleniumhq.selenium:selenium-java:4.29.0'
+    implementation 'io.github.bonigarcia:webdrivermanager:5.9.3'
+}
+
+test {
+    useJUnitPlatform()
+    systemProperty("cucumber.junit-platform.naming-strategy", "long")
+
+    filter {
+        includeTestsMatching ".*CucumberTest" // regex pattern
+    }
+}
+
+task cucumber(type: Test) {
+    dependsOn assemble, testClasses
+
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
+
+    // PERBAIKAN UTAMA: Menggunakan systemProperties yang benar
+    systemProperties = [
+            'cucumber.plugin': 'pretty, html:build/reports/cucumber/report.html, json:build/reports/cucumber/report.json',
+            'cucumber.filter.tags': System.getProperty('cucumber.filter.tags', ''),
+            'cucumber.junit-platform.naming-strategy': 'long'
+    ]
+
+    include '**/*CucumberTest.class'
+}
+
+configurations {
+    cucumberRuntime {
+        extendsFrom testImplementation
+    }
+}
